@@ -1,1 +1,3 @@
-# GROUP 1
+**GROUPE 1**\
+Marita EL HAJJ\
+Fatoumata DIALLO
