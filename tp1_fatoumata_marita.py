@@ -4,6 +4,23 @@ from multipledispatch import dispatch
 
 # ==== EXO 1 ====
 def distance_robuste(val1, val2, val3):
+    """
+      Calcule une distance robuste à partir de 3 mesures.
+    
+      On prend la médiane et on filtre les valeurs trop éloignées (> 0.5 * médiane).
+      - Si aucune valeur valide, retourne -1
+      - Si une seule valeur valide, retourne cette valeur
+      - Sinon retourne la moyenne des valeurs valides
+
+      Args:
+          val1 (float): Première mesure
+          val2 (float): Deuxième mesure
+          val3 (float): Troisième mesure
+
+      Returns:
+          float: distance robuste calculée
+    """
+
     mesures = [val1, val2, val3]
     mediane = statistics.median(mesures)
     valides = [m for m in mesures if abs(m - mediane) <= 0.5 * mediane]
@@ -16,11 +33,37 @@ def distance_robuste(val1, val2, val3):
         return sum(valides)/len(valides)
 
 def cout_deplacement(x1, y1, x2, y2, terrain):
+    """
+      Calcule le coût d’un déplacement selon le terrain.
+
+      Args:
+          x1 (float): Coordonnée x de départ
+          y1 (float): Coordonnée y de départ
+          x2 (float): Coordonnée x d’arrivée
+          y2 (float): Coordonnée y d’arrivée
+          terrain (str): Type de terrain ('R','H','S','O')
+
+      Returns:
+        float: coût du déplacement
+    """
     distance = math.dist([x1, y1], [x2, y2])
     coeffs = {'R':1.0, 'H':1.5, 'S':2.0, 'O':3.0}
     return distance*coeffs[terrain]
 
 def temps_trajet(x1, y1, x2, y2, terrain):
+    """
+      Calcule le temps de trajet selon la vitesse sur le terrain.
+
+      Args:
+          x1 (float): Coordonnée x de départ
+          y1 (float): Coordonnée y de départ
+          x2 (float): Coordonnée x d’arrivée
+          y2 (float): Coordonnée y d’arrivée
+          terrain (str): Type de terrain ('R','H','S','O')
+
+      Returns:
+          float: temps nécessaire pour effectuer le trajet
+    """
     distance = math.dist([x1, y1], [x2, y2])
     vitesses = {'R':2.0, 'H':1.5, 'S':1.0, 'O':0.5}
     return distance/vitesses[terrain]
@@ -28,17 +71,47 @@ def temps_trajet(x1, y1, x2, y2, terrain):
 
 # ==== EXO 2 ====
 class Position:
+    """
+      Représente une position 2D avec coordonnées x et y.
+    """
+
     def __init__(self, x=0, y=0):
+        """
+          Initialise une position.
+
+          Args:
+              x (float): Coordonnée x
+              y (float): Coordonnée y
+        """
         self.x = x
         self.y = y
 
     def distance_vers(self, other):
+        """
+          Calcule la distance euclidienne entre deux positions.
+
+          Args:
+            other (Position): autre position
+
+          Returns:
+            float: distance euclidienne
+        """
         return math.dist([self.x, self.y], [other.x, other.y])
 
     def afficher(self):
+        """Affiche les coordonnées de la position."""
         print(f"Position(x={self.x}, y={self.y})")
 
     def __iadd__(self, other):
+        """
+        Ajoute une position ou un tuple à la position courante.
+
+        Args:
+            other (Position|tuple): valeur à ajouter
+
+        Returns:
+            Position: position mise à jour
+        """
         if isinstance(other, Position):
             self.x += other.x
             self.y += other.y
@@ -48,46 +121,88 @@ class Position:
         return self
 
     def __add__(self, other):
+        """Permet l’addition avec + (délégué à add)."""
         return add(self, other)
 
     def __radd__(self, other):
+        """Permet l’addition commutative avec + (délégué à add)."""
         return add(other, self)
 
 
 # multipledispatch surcharges
 @dispatch(Position, Position)
 def add(a, b):
+    """Addition de deux positions."""
     return Position(a.x + b.x, a.y + b.y)
 
 @dispatch(Position, tuple)
 def add(a, b):
+    """Addition d'une position et d'un tuple (x,y)."""
     return Position(a.x + b[0], a.y + b[1])
 
 @dispatch(tuple, Position)
 def add(a, b):
+    """Addition d'un tuple (x,y) et d'une position."""
     return Position(a[0] + b.x, a[1] + b.y)
 
 
 # ==== EXO 3 ====
 class Robot:
+    """
+      Représente un robotavec une position.
+    """
     def __init__(self, position=None):
+        """
+          Initialise un robot.
+
+          Args:
+              position (Position): position initiale du robot
+        """
         if position is None:
             position = Position()
         self.position = position
 
     def avancer_droite(self, n):
+        """
+          Avance le robot vers la droite.
+
+          Args:
+              n (int): nombre de pas à faire
+        """
         self.position += (n, 0)
 
     def avancer_haut(self, n):
+        """
+          Avance le robot vers le haut.
+
+          Args:
+              n (int): nombre de pas à faire
+        """
         self.position += (0, n)
 
     def afficher(self):
+        """Affiche la position du robot."""
         print(f"Robot à position Position(x={self.position.x}, y={self.position.y})")
 
     def distance_vers_robot(self, autre_robot):
+        """
+          Calcule la distance euclidienne entre deux robots.
+
+          Args:
+            autre_robot (Robot): autre robot
+
+          Returns:
+            float: distance euclidienne
+        """
         return self.position.distance_vers(autre_robot.position)
 
     def aller_vers(self, position_cible):
+        """
+          Allonge le robot vers une position cible.
+
+          Args:
+              position_cible (Position): position cible
+        """
         dx = position_cible.x - self.position.x
         dy = position_cible.y - self.position.y
         step_x = 1 if dx > 0 else -1
@@ -100,64 +215,141 @@ class Robot:
 
 # ==== EXO 4 ====
 class Cible:
+    """
+      Représente une cible avec une position et un nom.
+    """
     def __init__(self, position=None, nom=""):
+        """
+          Initialise une cible.
+
+          Args:
+              position (Position): position de la cible
+              nom (str): nom de la cible
+        """
         if position is None:
             position = Position()
         self.position = position
         self.nom = nom
 
     def est_atteinte_par(self, robot):
+        """
+          Vérifie si la cible est atteinte par un robot.
+
+          Args:
+            robot (Robot): robot à vérifier
+
+          Returns:
+            bool: True si la cible est atteinte, False sinon
+        """
         return (robot.position.x == self.position.x) and (robot.position.y == self.position.y)
 
     def distance_depuis(self, robot):
+        """
+          Calcule la distance entre la cible et un robot.
+
+          Args:
+            robot (Robot): robot à vérifier
+
+          Returns:
+            float: distance entre la cible et le robot
+        """
         return robot.position.distance_vers(self.position)
 
     def afficher(self):
+        """Affiche la position de la cible."""
         print(f"Cible '{self.nom}' en position ({self.position.x}, {self.position.y})")
 
 
 # ==== EXO 5 ====
 class Parcours:
+    """
+      Représente un parcours avec des cibles.
+    """
     def __init__(self):
+        """Initialise un parcours vide."""
         self.cibles = []
 
     def ajouter_cible(self, cible):
+        """
+          Ajoute une cible au parcours.
+
+          Args:
+              cible (Cible): cible à ajouter
+        """
         self.cibles.append(cible)
 
     def nombre_cibles(self):
+        """
+          Retourne le nombre de cibles dans le parcours.
+
+          Returns:
+              int: nombre de cibles
+        """
         return len(self.cibles)
 
     def afficher(self):
+        """Affiche toutes les cibles du parcours."""
         for c in self.cibles:
             c.afficher()
 
     def executer_parcours(self, robot):
+        """
+          Exécute le parcours sur un robot.
+
+          Args:
+              robot (Robot): robot sur lequel exécuter le parcours
+        """
         for cible in self.cibles:
             robot.aller_vers(cible.position)
 
 
 # ==== EXO 6 ====
 class Terrain:
+    """
+      Représente un terrain avec des robots et un parcours.
+    """
     def __init__(self):
+        """Initialise un terrain vide."""
         self.robots = []
         self.parcours = None
 
     def ajouter_robot(self, robot):
+        """
+          Ajoute un robot au terrain.
+
+          Args:
+              robot (Robot): robot à ajouter
+        """
         self.robots.append(robot)
 
     def definir_parcours(self, parcours):
+        """
+          Définit un parcours pour le terrain.
+
+          Args:
+              parcours (Parcours): parcours à définir
+        """
         self.parcours = parcours
 
     def lancer_mission(self):
+        """Lance la mission sur tous les robots du terrain."""
         for r in self.robots:
             self.parcours.executer_parcours(r)
 
     def afficher_etat(self):
+        """Affiche l'état du terrain (position des robots)."""
         for i, r in enumerate(self.robots):
             print(f"Robot #{i} -> Position(x={r.position.x}, y={r.position.y})")
 
 
 def demonstration_complete():
+    """
+    Démonstration complète : crée un terrain, des robots et un parcours.
+    Lance la mission et affiche l'état final.
+    
+    Returns:
+        Terrain: terrain final après exécution
+    """
     terrain = Terrain()
     r1 = Robot(Position(0, 0))
     r2 = Robot(Position(1, 2))
